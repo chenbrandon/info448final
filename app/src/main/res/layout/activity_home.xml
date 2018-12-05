@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                              android:layout_width="match_parent"
+                                              android:layout_height="match_parent"
+android:id="@+id/home_content_container">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+        <!-- Linear layout for top bottons -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:id="@+id/buttons_main"
+        >
+
+            <!-- Navigate to calendar activity -->
+            <LinearLayout
+                    android:id="@+id/button_calendar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:background="@drawable/border"
+
+            >
+
+                <!-- icon -->
+                <ImageView android:layout_width="fill_parent"
+                           android:layout_height="wrap_content"
+                           android:src="@drawable/ic_sun"
+                           android:tint="@color/yellow"
+                           android:background="@drawable/border"
+                           android:adjustViewBounds="true"
+                />
+
+
+                <!-- label -->
+                <TextView android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:paddingBottom="10dp"
+                          android:text="Find Your Best\nTime to Run"/>
+
+
+            </LinearLayout>
+
+            <!-- Navigate to playlist activity -->
+            <LinearLayout
+                    android:id="@+id/button_music"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:background="@drawable/border"
+            >
+
+                <ImageView android:layout_width="fill_parent"
+                           android:layout_height="wrap_content"
+                           android:adjustViewBounds="true"
+                           android:tint="@color/black"
+                           android:background="@drawable/border"
+                           android:src="@drawable/ic_music"
+                />
+                <TextView android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Set Your\nPlaylist"
+                          android:paddingBottom="10dp"
+                />
+
+
+            </LinearLayout>
+            <!-- Navigate to new run activity -->
+            <LinearLayout
+                    android:id="@+id/button_run"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:layout_weight="1"
+                    android:background="@drawable/border"
+            >
+
+                <ImageView android:layout_width="fill_parent"
+                           android:layout_height="wrap_content"
+                           android:src="@drawable/ic_run"
+                           android:tint="@color/black"
+                           android:background="@drawable/border"
+                           android:adjustViewBounds="true"
+                />
+                <TextView android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:paddingBottom="10dp"
+                          android:text="Start Tracking\n Your Run"/>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+        >
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="History"
+                    android:padding="15dp"
+                    android:textSize="20sp"
+            />
+
+            <ListView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/list_run_history"
+            >
+
+            </ListView>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>
