@@ -13,8 +13,7 @@
             android:layout_alignParentStart="true"
             android:layout_marginEnd="16dp"
             android:src="@mipmap/ic_default_song_image"
-            android:background="@color/ic_launcher_background"
-    />
+            android:background="@color/ic_launcher_background"/>
 
     <android.support.v7.widget.AppCompatTextView
             android:id="@+id/playlist_item_song"
@@ -22,8 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/playlist_item_image"
             android:textSize="16sp"
-            android:textColor="@color/colorAccent"
-            android:text="Song"/>
+            android:textColor="@color/colorAccent"/>
 
     <android.support.v7.widget.AppCompatTextView
             android:id="@+id/playlist_item_artist"
@@ -32,15 +30,14 @@
             android:layout_toEndOf="@id/playlist_item_image"
             android:layout_below="@id/playlist_item_song"
             android:textSize="14sp"
-            android:text="Artist"/>
+            android:textColor="@color/colorPrimaryDark"/>
 
     <android.support.v7.widget.AppCompatTextView
             android:id="@+id/playlist_item_length"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignBaseline="@id/playlist_item_artist"
-            android:text="0:00"/>
+            android:layout_alignBaseline="@id/playlist_item_artist"/>
 
 
 </RelativeLayout>

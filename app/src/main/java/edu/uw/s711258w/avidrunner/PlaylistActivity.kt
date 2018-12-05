@@ -23,9 +23,6 @@ import kaaes.spotify.webapi.android.SpotifyService
 import retrofit.RequestInterceptor.RequestFacade
 import retrofit.RequestInterceptor
 import kaaes.spotify.webapi.android.SpotifyApi
-import kaaes.spotify.webapi.android.models.Album
-import kaaes.spotify.webapi.android.models.Recommendations
-import kaaes.spotify.webapi.android.models.UserPrivate
 import kotlinx.android.synthetic.main.activity_playlist.*
 import retrofit.Callback
 import retrofit.RestAdapter
@@ -49,27 +46,32 @@ import com.spotify.android.appremote.api.UserApi
 import com.spotify.protocol.client.CallResult
 import org.json.JSONException
 import com.android.volley.toolbox.*
+import com.spotify.protocol.types.Artist
+import kaaes.spotify.webapi.android.models.*
+import java.util.*
+import kotlin.math.min
 
 class PlaylistActivity : AppCompatActivity() {
 
     private val TAG = "VT PLAYLISTACTIVITY"
 
-    private val CLIENT_ID = "e576aca107ee4454a716f9ecf27edf1c"//getString(R.string.spotify_client_id)
+    private val CLIENT_ID = "e576aca107ee4454a716f9ecf27edf1c"
     private val REDIRECT_URI = "edu.uw.s711258w.avidrunner://AuthenticationResponse"
     private lateinit var mSpotifyAppRemote: SpotifyAppRemote
     private lateinit var connectionListener: Connector.ConnectionListener
-    //private var accessToken: String = "BQC0P5XP_oJFmcnEplIb13djEJnpnXYsNpVtM51lzYbdKj2nKylyDF1AqqzHhuKB9pibjmJRcqSWY14NNBmqZE59rWEhOFi5gfTDG9fZPsU1Rrb3o6Gx5VeglqWtOZ7PClUcpVTcrtZqJ8gwHzCTpp23skC6POMqSVjZihYHMwfxDRfkgLhHjWOPvMLZKshfhOnLLAw9dstGrXzNUQLOLT1mSgvbeaVhb64oOdWrJ3pL72yxxZM4Oaa-FUaLrgmMOIGscyY"
     private lateinit var accessToken: String
     private lateinit var userApi: UserApi
     private lateinit var spotifyService: SpotifyService
     private var sucessfullyConnected: Boolean = false // to remote spotify
     private lateinit var currentUserPrivate: UserPrivate
-    private val playlistTracks =  mutableListOf<Track>()
+    private lateinit var userDisplayName: String
     private val sTracks =  mutableListOf<kaaes.spotify.webapi.android.models.Track>()
+    private val topArtists = mutableListOf<String>()
+    private var playlistCreated = false
+    private lateinit var playlistGenerated: Playlist
 
     // Request code will be used to verify if result comes from the login activity
     private val LOGIN_REQUEST_CODE = 1337
-    private val LOGOUT_REQUEST_CODE = 5
 
     /** Prompts the user to install the Spotify app if not found on their device
      *  and to authorize our app by signing into their Spotify account **/
@@ -151,10 +153,8 @@ class PlaylistActivity : AppCompatActivity() {
         setContentView(R.layout.activity_playlist)
 
         // Set up the recyclerview to display the generated playlist
-        //val recyclerView = playlist_list
         playlist_list.layoutManager = LinearLayoutManager(this)
         playlist_list.adapter = RecyclerViewAdapter(this, sTracks)
-        //playlist_list.adapter = PlaylistRecyclerViewAdapter(this, playlistTracks)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -190,24 +190,68 @@ class PlaylistActivity : AppCompatActivity() {
         }
     }
 
-    // Handles the click for Change Playlist button
-    // sends user to settings activity where they can change the options for the playlist
-    fun handleChangePlaylist(v: View) {
-        Log.v(TAG, "Change Playlist button clicked, sending to Settings...")
-        startActivity(Intent(this, SettingsActivity::class.java))
-    }
-
     // Handles the click for Generate Playlist button
-    // Generates a playlist based on the users Playlist Options preferences
-    fun handleGeneratePlaylist(v: View) {
-        Log.v(TAG, "Generate Playlist button clicked, creating a playlist...")
-        // TODO generate a playlist
+    // Generates a random playlist
+    fun handleRegeneratePlaylist(v: View) {
+        Log.v(TAG, "Regenerate Playlist button clicked, creating a new playlist...")
+        getUserTopTracksArtists()
     }
 
-    // Log out of spotify in our app
-    fun logOut(v: View) {
-        //AuthenticationClient.openLoginActivity(this, )
+    // Handles the click for Add Playlist button
+    fun handleAddPlaylist(v: View) {
+        Log.v(TAG, "Add Playlist button clicked, adding playlist to Spotify account...")
+
+        //if (!playlistCreated) {
+            createPlaylist("Avid Runner Playlist")
+            //playlistCreated = true
+        //}
+        //if (playlistGenerated != null) {
+            val parameters = mutableMapOf<String, Any>()
+            // array of track uris
+            val body = mutableMapOf<String, Any>()
+            val uriArray = arrayListOf<String>()
+            for (track in sTracks) {
+                Log.v(TAG, "track uri ${track.uri}")
+                uriArray.add(track.uri)
+            }
+            parameters["uris"] = uriArray.toList()
+
+            spotifyService.addTracksToPlaylist(
+                currentUserPrivate.display_name,
+                playlistGenerated.id,
+                parameters,
+                body,
+                object : Callback<Pager<PlaylistTrack>> {
+                    override fun success(playlistTrack: Pager<PlaylistTrack>, response: retrofit.client.Response) {
+                        Log.v(TAG, "Add to playlist success ${playlistTrack.total}")
+
+                    }
+
+                    override fun failure(error: RetrofitError) {
+                        Log.v(TAG, "Add to playlist failure " + error.toString())
+                    }
+                })
+        //}
     }
+
+    // creates a playlist
+    fun createPlaylist(name: String) {
+        val parameters = mutableMapOf<String, Any>()
+        parameters["name"] = name
+        spotifyService.createPlaylist(currentUserPrivate.display_name, parameters, object: Callback<Playlist> {
+            override fun success(playlist: Playlist , response: retrofit.client.Response) {
+                Log.v(TAG,"Create playlist success ${playlist.name}")
+                Log.v(TAG,"Create playlist success ${playlist.id}")
+                Log.v(TAG,"Create playlist success ${playlist.uri}")
+                playlistGenerated = playlist
+            }
+
+            override fun failure(error: RetrofitError ) {
+                Log.v(TAG, "Create playlist failure " + error.toString())
+            }
+        })
+    }
+
 
     // What to do when connected to remote Spotify app
     private fun connected() {
@@ -216,7 +260,6 @@ class PlaylistActivity : AppCompatActivity() {
         userApi = mSpotifyAppRemote.userApi
         subscribeToPlayerState()
         createSpotifyService()
-        //playlist_activity_layout.visibility = View.VISIBLE
     }
 
     // Creates a Spotify service with access token from successfully connecting to remote spotify app
@@ -230,31 +273,8 @@ class PlaylistActivity : AppCompatActivity() {
 
         getUser()
         getWorkOutPlaylist()
-        //getRecommendations()
 
         playlist_activity_layout.visibility = View.VISIBLE
-        /*
-        val restAdapter = RestAdapter.Builder()
-            .setEndpoint(SpotifyApi.SPOTIFY_WEB_API_ENDPOINT)
-            //.setRequestInterceptor { request ->
-                //request.addHeader("Authorization", "Bearer $accessToken")
-            //}
-            .setRequestInterceptor( object: RequestInterceptor {
-                override fun intercept(request: RequestFacade) {
-                    request.addHeader("Authorization", "Bearer $accessToken")
-                }
-            })
-            .build()
-        spotifyService = restAdapter.create(SpotifyService::class.java)
-        Log.v(TAG, "Successfully created Spotify Service!")
-        //sucessfullyConnected = true
-        val id = mSpotifyAppRemote.userApi.subscribeToUserStatus().requestId
-        Log.v(TAG, "ID: $id")
-        //signed_in_user.text = spotifyService.getMe().display_name
-
-        //signed_in_user.text = spotifyService.me.display_name
-        //Log.v(TAG, "${spotifyService.getMe().display_name}")
-        */
     }
 
     // Returns the current user logged in
@@ -264,6 +284,8 @@ class PlaylistActivity : AppCompatActivity() {
                 currentUserPrivate = user
                 Log.v(TAG,"Get user success " + user.display_name)
                 signed_in_user.text = user.display_name
+                getUserTopArtists()
+                userDisplayName = user.display_name
             }
 
             override fun failure(error: RetrofitError ) {
@@ -272,23 +294,78 @@ class PlaylistActivity : AppCompatActivity() {
         })
     }
 
+    // create a personalized playlist based on the users top artists
+    fun getUserTopTracksArtists() {
+        var result = ""
+        for (item in topArtists) {
+            if (result.isNotEmpty()) {
+                result = result + ",$item"
+            } else {
+                result = result + item
+            }
+        }
+        Log.v(TAG, "Artists Result: $result")
 
-    fun getUserPlaylist() {
+        val preferences = mutableMapOf<String, Any>()
+        preferences["limit"] = 15
+        preferences["seed_genres"] = result
+        getTrackRecommendations(preferences)
+    }
 
+    // sets the top artists for the current user, gets the genres
+    fun getUserTopArtists() {
+        // For requesting the top artists
+        val parameters = mutableMapOf<String, Any>()
+        parameters["limit"] = 10
+        parameters["time_range"] = "short_term" // the last 4 weeks
+
+        var validCount = 0
+
+        spotifyService.getTopArtists(parameters, object: Callback<Pager<kaaes.spotify.webapi.android.models.Artist>> {
+            override fun success(artistsPager: Pager<kaaes.spotify.webapi.android.models.Artist> , response: retrofit.client.Response) {
+                Log.v(TAG,"Get top artists success ")
+                val artists = artistsPager.items
+                Log.v(TAG, "Top Artists count: ${artists.size}")
+                topArtists.clear()
+                for (artist in artists) {
+                    val genres = artist.genres
+                    for (genre in genres) {
+                        Log.v(TAG, "${artist.name} genre $genre")
+                        if (spotifyGenres.contains(genre) && !topArtists.contains(genre) && validCount < 5 ) {
+                            Log.v(TAG,"   VALID adding genre $genre")
+                            topArtists.add(genre)
+                            validCount++
+                        }
+                    }
+                }
+            }
+
+            override fun failure(error: RetrofitError ) {
+                Log.v(TAG, "Get user top artists failure " + error.toString())
+            }
+        })
     }
 
     // Get a work out genre playlist
     fun getWorkOutPlaylist() {
         val preferences = mutableMapOf<String, Any>()
         preferences["seed_genres"] = "work-out,pop,edm"
-        //preferences["market"] = "from_token"
+
+        val random = Random()
+        preferences["market"] = "from_token"
         preferences["limit"] = 15
-        preferences["target_energy"] = 0.85
-        //preferences["target_valence"] = 0.9
-        preferences["min_popularity"] = 85
+        val targetEnergy = (random.nextInt(85-70)+ 70).toDouble() / 100
+        val targetValence = (random.nextInt(85-70)+ 70).toDouble() / 100
+        preferences["target_energy"] = targetEnergy
+        preferences["target_valence"] = targetValence
         //tempo BPM
         //valence 0.0-1.0
 
+        getTrackRecommendations(preferences)
+
+    }
+
+    fun getTrackRecommendations(preferences: MutableMap<String, Any>) {
         spotifyService.getRecommendations(preferences, object: Callback<Recommendations> {
             override fun success(recommendations: Recommendations , response: retrofit.client.Response) {
                 Log.v(TAG,"Get recommendations success " + recommendations.seeds)
@@ -296,13 +373,10 @@ class PlaylistActivity : AppCompatActivity() {
                 Log.v(TAG, "Tracks ${tracks.size}")
 
                 // clear the current playlist
-                //sTracks.clear()
+                sTracks.clear()
 
                 for (track in tracks) {
-                    Log.v(TAG, "   SONG: ${track.name}   ARTISTS:${track.artists.size}   ALBUM: ${track.album.name}   POPULARITY: ${track.popularity}   URI:${track.uri}")
-                    val id = track.id
-                    //val url = "https://api.spotify.com/v1$id"
-                    //val spotifyTrack = mSpotifyAppRemote.imagesApi.getImage(track.album.images.first().url)
+                    Log.v(TAG, "SONG: ${track.name} ARTISTS:${track.artists.size} ALBUM: ${track.album.name} POPULARITY: ${track.popularity} URI:${track.uri}")
                     sTracks.add(track)
                     playlist_list.adapter!!.notifyDataSetChanged()
                 }
@@ -365,20 +439,33 @@ class PlaylistActivity : AppCompatActivity() {
             return ViewHolder(view)
         }
 
-        // assign values from the NewsArticle objects to the proper fields
+        // assign values from the Track objects to the proper fields
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = values[position]
+            // set default and error image
             holder.imageView.setErrorImageResId(R.mipmap.ic_default_song_image)
             holder.imageView.setDefaultImageResId(R.mipmap.ic_default_song_image)
+
+            // set the image from the track
             holder.imageView.setImageUrl(item.album.images.first().url, VolleyService.getInstance(this.parentActivity).imageLoader)
+
+            // set the song name
             holder.songView.text = item.name
+
+            // set the artist to the first artict listed
             holder.artistView.text = item.artists.first().name
+
+            // convert song duration in milliseconds to minutes
             val duration = (item.duration_ms.toDouble() / 1000).toInt()
             val minutes = (duration / 60).toString()
             var seconds = (duration%60).toString()
             if (seconds.length == 1) {seconds = "0$seconds"}
+            // format to 0:00
             val time = "$minutes:$seconds"
-            holder.songLengthView.text = time//duration.toString()
+            // set the length of the song
+            holder.songLengthView.text = time
+
+            // set on item click
             with(holder.itemView) {
                 tag = item
                 setOnClickListener(onClickListener)
@@ -386,99 +473,6 @@ class PlaylistActivity : AppCompatActivity() {
         }
 
         override fun getItemCount() = values.size
-
-    }
-
-    // Recycler view adapter for using a Spotify Track
-    class PlaylistRecyclerViewAdapter(private val parentActivity: PlaylistActivity,
-                                      private val values: MutableList<Track>) :
-        RecyclerView.Adapter<PlaylistRecyclerViewAdapter.ViewHolder>() {
-
-        private val onClickListener: View.OnClickListener
-
-        init {
-            onClickListener = View.OnClickListener { v ->
-                Log.v("RecyclerViewAdapter", "Song clicked")
-            }
-        }
-
-        // Set of instance variables
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val imageView: NetworkImageView = view.playlist_item_image
-            val songView: TextView = view.playlist_item_song
-            val artistView: TextView = view.playlist_item_artist
-            val songLengthView: TextView = view.playlist_item_length
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.playlist_item, parent, false)
-            return ViewHolder(view)
-        }
-
-        // assign values from the NewsArticle objects to the proper fields
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = values[position]
-            holder.imageView.setErrorImageResId(R.mipmap.ic_default_song_image)
-            holder.imageView.setDefaultImageResId(R.mipmap.ic_default_song_image)
-            holder.imageView.setImageUrl(item.imageUri.toString(), VolleyService.getInstance(this.parentActivity).imageLoader)
-            holder.songView.text = item.name
-            holder.artistView.text = item.artist.toString()
-            holder.songLengthView.text = item.duration.toDouble().toString()
-            with(holder.itemView) {
-                tag = item
-                setOnClickListener(onClickListener)
-            }
-        }
-
-        override fun getItemCount() = values.size
-
-    }
-
-    // Returns recommendations for the user based on their preferences
-    fun getRecommendations(): Recommendations? {
-        Log.v(TAG, "Getting recommendations for the user...")
-        val userPrefernces = getPreferences(Context.MODE_PRIVATE)
-        //userPrefernces = this.getSharedPreferences( "PlaylistOptions",Context.MODE_PRIVATE)
-        Log.v(TAG, "Genre pref exists: ${userPrefernces.contains("playlist_genre")}")
-        // Default preferences
-        val defaultGenres = mutableSetOf<String>()
-        defaultGenres.add("work-out")
-        defaultGenres.add("pop")
-        val defaultDuration = "20"
-
-        // User preferences values
-        val genres = userPrefernces.getStringSet("playlist_genre", defaultGenres)
-        Log.v(TAG, "User genres: ${genres}")
-        val duration = userPrefernces.getString("playlist_length", defaultDuration)
-        Log.v(TAG, "User length: $duration")
-
-        // For the request
-        val limit = duration!!.toInt() / 3
-
-        val preferences = mutableMapOf<String, Any>()
-        preferences["seed_genres"] = defaultGenres.toList().toString()
-        //preferences["market"] = "from_token"
-        //
-        // preferences["limit"] = limit
-
-        var recommendations: Recommendations? = null
-        spotifyService.getRecommendations(preferences, object: Callback<Recommendations> {
-            override fun success(recs: Recommendations , response: retrofit.client.Response) {
-                recommendations = recs
-                Log.v(TAG,"Get recommendations success " + recs.seeds)
-                val tracks = recs.tracks
-                Log.v(TAG, "Tracks ${tracks.size}")
-                for (track in tracks) {
-                    Log.v(TAG, "Track album: ${track.album.name} name: ${track.name}")
-                }
-            }
-
-            override fun failure(error: RetrofitError ) {
-                Log.v(TAG, "Get recommendations failure " + error.toString())
-            }
-        })
-        return  recommendations
     }
 
     // Returns the album of the given id
@@ -495,34 +489,6 @@ class PlaylistActivity : AppCompatActivity() {
             }
         })
         return album
-    }
-
-    // Returns the track of the given id SpotifyService
-    fun getTrackKaaes(trackId: String): kaaes.spotify.webapi.android.models.Track {
-        lateinit var track: kaaes.spotify.webapi.android.models.Track
-        spotifyService.getTrack(trackId, object: Callback<kaaes.spotify.webapi.android.models.Track> {
-            override fun success(result: kaaes.spotify.webapi.android.models.Track, response: retrofit.client.Response) {
-                track = result
-                Log.v(TAG,"Album success " + track.name)
-            }
-
-            override fun failure(error: RetrofitError ) {
-                Log.v(TAG, "Album failure " + error.toString())
-            }
-        })
-        return track
-    }
-
-    // TODO finish
-    fun getPlaylist() {
-        Log.v(TAG, "Getting playlists...")
-
-    }
-
-    //TODO change the playlist, it's random
-    // Play a playlist
-    fun playPlaylist() {
-        mSpotifyAppRemote.playerApi.play("spotify:user:spotify:playlist:37i9dQZF1DX2sUQwD7tbmL")
     }
 
     // Subscribe to PlayerState, get the song that's playing
@@ -573,35 +539,8 @@ class PlaylistActivity : AppCompatActivity() {
 
     }
 
-    // Authorize the user using the built-in auth flow
-    fun builtInAuthFlow() {
-        val connectionParams = ConnectionParams.Builder(CLIENT_ID)
-            .setRedirectUri(REDIRECT_URI)
-            .showAuthView(true)
-            .build()
-
-        SpotifyAppRemote.connect(this, connectionParams,
-            object : Connector.ConnectionListener {
-
-                override fun onConnected(spotifyAppRemote: SpotifyAppRemote) {
-                    mSpotifyAppRemote = spotifyAppRemote
-                    Log.v(TAG, "Connected! Yay!")
-
-                    // Now you can start interacting with App Remote
-                    connected()
-
-                }
-
-                override fun onFailure(throwable: Throwable) {
-                    Log.v(TAG, throwable.message, throwable)
-
-                    // Something went wrong when attempting to connect! Handle errors here
-                }
-            })
-    }
-
     //A class to manage the Volley requestQueue as a singleton
-    private class VolleyService private constructor(ctx: Context) { //private constructor; cannot instantiate directly
+    private class VolleyService private constructor(ctx: Context) {
         companion object {
             private var instance: VolleyService? = null //the single instance of this singleton
 

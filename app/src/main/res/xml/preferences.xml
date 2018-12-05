@@ -6,28 +6,4 @@
             android:key="cityname"
             android:title="City Name Location"/>
 
-    <!-- Playlist Options-->
-    <PreferenceCategory
-        android:key="playlist_category"
-        android:title="Playlist Options"
-        android:summary="@string/playlist_options_summary">
-
-        <!-- Genres -->
-        <MultiSelectListPreference
-            android:key="playlist_genre"
-            android:title="@string/playlist_genre_title"
-            android:entries="@array/genres"
-            android:entryValues="@array/genres_values"
-            android:summary="@string/genre_summary"/>
-
-        <!-- Length -->
-        <ListPreference
-            android:key="playlist_length"
-            android:title="@string/playlist_length_title"
-            android:entries="@array/length"
-            android:entryValues="@array/length_values"
-            android:summary="@string/length_summary"/>
-
-    </PreferenceCategory>
-
 </PreferenceScreen>

@@ -25,7 +25,12 @@
         <item>user-read-private</item>
     </string-array>
     <string name="spotify_client_id">e576aca107ee4454a716f9ecf27edf1c</string>
-    <string name="signed_in_as">Signed into Spotify as</string>
+    <string name="signed_in_as">Signed in as</string>
+
+    <string name="regenerate_playlist_button_description">New random playlist</string>
+    <string name="add_playlist_button_description">Add this playlist to your Spotify account</string>
+    <string name="play_button_description">Play this playlist</string>
+
     <string name="playlist_options_summary">Customize your running playlist</string>
 
     <string name="playlist_genre_title">Genres</string>

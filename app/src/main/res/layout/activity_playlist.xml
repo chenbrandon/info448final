@@ -12,111 +12,77 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_margin="16dp"
             android:visibility="invisible">
 
-        <!-- Signed in as -->
+        <android.support.v7.widget.RecyclerView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:id="@+id/playlist_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|top"
+                android:layout_alignParentTop="true"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                tools:context=".PlaylistActivity"
+                tools:listitem="@layout/playlist_item"/>
+
         <RelativeLayout
-                android:id="@+id/spotify_signed_in"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-            <android.support.v7.widget.AppCompatTextView
-                    android:id="@+id/signed_in"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/signed_in_as"
-                    android:layout_toStartOf="@id/signed_in_user"
-            />
-
-            <android.support.v7.widget.AppCompatTextView
-                    android:id="@+id/signed_in_user"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/colorAccent"
-                    android:paddingStart="4dp"
-                    android:layout_alignParentEnd="true"/>
-        </RelativeLayout>
-
-        <!-- Playlist Length
-        <LinearLayout
-            android:id="@+id/playlist_length_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@id/spotify_signed_in">
-
-        <android.support.v7.widget.AppCompatTextView
-            android:id="@+id/playlist_length"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="@string/playlist_length_title"
-            style="@style/Subheader"/>
-        </LinearLayout>
-
-         Playlist Genre
-        <LinearLayout
-            android:id="@+id/playlist_genre_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@id/playlist_length_layout">
-
-        <android.support.v7.widget.AppCompatTextView
-            android:id="@+id/playlist_genre"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="@string/playlist_genre_title"
-            style="@style/Subheader"/>
-        </LinearLayout>-->
-
-        <!-- Buttons for changing playlist and generate playlist
-        <android.support.v7.widget.AppCompatButton
-                android:id="@+id/change_playlist_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/change_playlist"
-                android:layout_below="@id/spotify_signed_in"
-                android:onClick="handleChangePlaylist"/>
-
-        <android.support.v7.widget.AppCompatButton
-                android:id="@+id/generate_playlist_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/generate_playlist"
-                android:layout_below="@id/spotify_signed_in"
-                android:layout_alignParentEnd="true"
-                android:onClick="handleGeneratePlaylist"/>-->
-
-        <!-- Playlist songs-->
-        <LinearLayout
-                android:id="@+id/playlist_songs_layout"
+                android:id="@+id/playlist_bottom_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_alignParentTop="true">
+                android:background="@color/colorAccent"
+                android:padding="8dp"
+                android:layout_alignParentBottom="true">
 
-            <android.support.v7.widget.AppCompatTextView
-                    android:id="@+id/playlist_text"
+            <!-- Buttons for Regenerate Playlist, Add Playlilst, Play -->
+            <android.support.v7.widget.AppCompatImageButton
+                    android:id="@+id/regenerate_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingBottom="8dp"
-                    android:text="@string/playlist_title"
-                    style="@style/Subheader"/>
+                    android:src="@drawable/ic_refresh_white_40dp"
+                    android:background="@color/colorAccent"
+                    android:paddingEnd="12dp"
+                    android:contentDescription="@string/regenerate_playlist_button_description"
+                    android:onClick="handleRegeneratePlaylist"/>
+            <!--
+            <android.support.v7.widget.AppCompatImageButton
+                    android:id="@+id/add_playlist_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_playlist_add_white_40dp"
+                    android:layout_toEndOf="@id/regenerate_button"
+                    android:background="@color/colorAccent"
+                    android:paddingEnd="8dp"
+                    android:contentDescription="@string/add_playlist_button_description"
+                    android:onClick="handleAddPlaylist"/>
+             -->
 
-            <android.support.v7.widget.RecyclerView
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:app="http://schemas.android.com/apk/res-auto"
-                    xmlns:tools="http://schemas.android.com/tools"
-                    android:id="@+id/playlist_list"
+            <!-- Signed in as -->
+            <RelativeLayout
+                    android:id="@+id/spotify_signed_in"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center|top"
-                    tools:context=".PlaylistActivity"
-                    tools:listitem="@layout/playlist_item" />
-        </LinearLayout>
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentEnd="true">
 
+                <android.support.v7.widget.AppCompatTextView
+                        android:id="@+id/signed_in"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/signed_in_as"
+                        android:layout_toStartOf="@id/signed_in_user"/>
+
+                <android.support.v7.widget.AppCompatTextView
+                        android:id="@+id/signed_in_user"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/colorPrimaryDark"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="8dp"
+                        android:layout_alignParentEnd="true"/>
+            </RelativeLayout>
+        </RelativeLayout>
     </RelativeLayout>
 </android.support.constraint.ConstraintLayout>
