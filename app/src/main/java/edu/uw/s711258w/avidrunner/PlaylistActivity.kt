@@ -174,6 +174,10 @@ class PlaylistActivity : AppCompatActivity() {
                 startActivity(Intent(this, PlaylistActivity::class.java))
                 true
             }
+            R.id.start_run -> {
+                startActivity(Intent(this, MapsActivity::class.java))
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -309,7 +313,7 @@ class PlaylistActivity : AppCompatActivity() {
             }
         })
     }
-    
+
     fun getTrack(trackid: String) {
         val url = "https://api.spotify.com/v1$trackid"
         Log.v("VTest ListActivity", url)
