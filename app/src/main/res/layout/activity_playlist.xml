@@ -11,8 +11,7 @@
             android:id="@+id/playlist_activity_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="invisible">
+            android:orientation="vertical">
 
         <android.support.v7.widget.RecyclerView
                 xmlns:android="http://schemas.android.com/apk/res/android"
@@ -46,7 +45,7 @@
                     android:paddingEnd="12dp"
                     android:contentDescription="@string/regenerate_playlist_button_description"
                     android:onClick="handleRegeneratePlaylist"/>
-            <!--
+
             <android.support.v7.widget.AppCompatImageButton
                     android:id="@+id/add_playlist_button"
                     android:layout_width="wrap_content"
@@ -57,7 +56,7 @@
                     android:paddingEnd="8dp"
                     android:contentDescription="@string/add_playlist_button_description"
                     android:onClick="handleAddPlaylist"/>
-             -->
+
 
             <!-- Signed in as -->
             <RelativeLayout
