@@ -1,0 +1,86 @@
+<resources>
+    <string name="app_name">AvidRunner</string>
+    <string-array name="days">
+        <item>Today</item>
+        <item>Tomorrow</item>
+    </string-array>
+
+    <string name="title_activity_maps">Map</string>
+
+    <!-- PLAYLIST -->
+    <string name="title_playlist_activity">Playlist</string>
+    <string-array name="scopes">
+        <item>app-remote-control</item>
+        <item>streaming</item>
+        <item>playlist-read-private</item>
+        <item>playlist-read-collaborative</item>
+        <item>playlist-modify-public</item>
+        <item>playlist-modify-private</item>
+        <item>user-read-recently-played</item>
+        <item>user-top-read</item>
+        <item>user-library-modify</item>
+        <item>user-library-read</item>
+        <item>user-follow-read</item>
+        <item>user-read-private</item>
+    </string-array>
+    <string name="spotify_client_id">e576aca107ee4454a716f9ecf27edf1c</string>
+    <string name="signed_in_as">Signed into Spotify as</string>
+
+    <string name="playlist_options_summary">Customize your running playlist</string>
+
+    <string name="playlist_genre_title">Genres</string>
+    <string name="genre_summary">Select your preferred genres for your playlist</string>
+    <string-array name="genres">
+        <item>Pop</item>
+        <item>Alternative</item>
+        <item>Hip Hop</item>
+        <item>Rap</item>
+        <item>Electronic Music</item>
+        <item>Rock</item>
+        <item>Country</item>
+        <item>Jazz</item>
+        <item>Blues</item>
+    </string-array>
+    <string-array name="genres_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+    </string-array>
+
+    <string name="playlist_length_title">Length</string>
+    <string-array name="length">
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>20 minutes</item>
+        <item>25 minutes</item>
+        <item>30 minutes</item>
+        <item>35 minutes</item>
+        <item>40 minutes</item>
+        <item>45 minutes</item>
+    </string-array>
+    <string-array name="length_values">
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>35</item>
+        <item>40</item>
+        <item>45</item>
+    </string-array>
+
+    <string name="length_summary">Choose the duration of your playlist</string>
+    <string name="playlist_title">Playlist</string>
+    <string name="change_playlist">Change Playlist</string>
+    <string name="generate_playlist">Generate Playlist</string>
+
+
+
+</resources>
+

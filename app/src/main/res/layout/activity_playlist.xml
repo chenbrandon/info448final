@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="edu.uw.s711258w.avidrunner.PlaylistActivity">
+
+    <RelativeLayout
+        android:id="@+id/playlist_activity_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_margin="16dp"
+        android:visibility="invisible">
+
+        <!-- Signed in as -->
+        <RelativeLayout
+            android:id="@+id/spotify_signed_in"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/signed_in"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/signed_in_as"
+                android:layout_toStartOf="@id/signed_in_user"
+                />
+
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/signed_in_user"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorAccent"
+                android:paddingStart="4dp"
+                android:layout_alignParentEnd="true"/>
+    </RelativeLayout>
+
+        <!-- Playlist Length -->
+        <LinearLayout
+            android:id="@+id/playlist_length_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/spotify_signed_in">
+
+        <android.support.v7.widget.AppCompatTextView
+            android:id="@+id/playlist_length"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/playlist_length_title"
+            style="@style/Subheader"/>
+        </LinearLayout>
+
+        <!-- Playlist Genre -->
+        <LinearLayout
+            android:id="@+id/playlist_genre_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/playlist_length_layout">
+
+        <android.support.v7.widget.AppCompatTextView
+            android:id="@+id/playlist_genre"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/playlist_genre_title"
+            style="@style/Subheader"/>
+        </LinearLayout>
+
+        <!-- Buttons for changing playlist and generate playlist-->
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/change_playlist_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/change_playlist"
+            android:layout_below="@id/playlist_genre_layout"
+            android:onClick="handleChangePlaylist"/>
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/generate_playlist_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/generate_playlist"
+            android:layout_below="@id/playlist_genre_layout"
+            android:layout_alignParentEnd="true"
+            android:onClick="handleGeneratePlaylist"/>
+
+        <!-- Playlist songs-->
+        <LinearLayout
+            android:id="@+id/playlist_songs_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="invisible"
+            android:layout_below="@id/generate_playlist_button">
+
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/playlist_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/playlist_title"
+                style="@style/Subheader"/>
+
+            <ListView
+                android:id="@+id/playlist_listview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            </ListView>
+        </LinearLayout>
+
+    </RelativeLayout>
+</android.support.constraint.ConstraintLayout>
