@@ -72,6 +72,11 @@ class HomeActivity: AppCompatActivity() {
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        getRunData()
+    }
+
     // Gets the run data, render in list
     fun getRunData() {
         runDataList.clear()
