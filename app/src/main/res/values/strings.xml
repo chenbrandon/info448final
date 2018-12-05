@@ -8,6 +8,7 @@
     <string name="title_activity_maps">Map</string>
 
     <!-- PLAYLIST -->
+    <!-- PLAYLIST -->
     <string name="title_playlist_activity">Playlist</string>
     <string-array name="scopes">
         <item>app-remote-control</item>
@@ -25,32 +26,34 @@
     </string-array>
     <string name="spotify_client_id">e576aca107ee4454a716f9ecf27edf1c</string>
     <string name="signed_in_as">Signed into Spotify as</string>
-
     <string name="playlist_options_summary">Customize your running playlist</string>
 
     <string name="playlist_genre_title">Genres</string>
     <string name="genre_summary">Select your preferred genres for your playlist</string>
+    <string name="default_genre">work-out</string>
     <string-array name="genres">
+        <item>Work out</item>
         <item>Pop</item>
         <item>Alternative</item>
         <item>Hip Hop</item>
-        <item>Rap</item>
-        <item>Electronic Music</item>
+        <item>Punk</item>
+        <item>Electronic Dance Music</item>
         <item>Rock</item>
         <item>Country</item>
         <item>Jazz</item>
         <item>Blues</item>
     </string-array>
     <string-array name="genres_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-        <item>7</item>
-        <item>8</item>
-        <item>9</item>
+        <item>work-out</item>
+        <item>pop</item>
+        <item>alternative</item>
+        <item>hip-hop</item>
+        <item>punk</item>
+        <item>edm</item>
+        <item>rock</item>
+        <item>country</item>
+        <item>jazz</item>
+        <item>blues</item>
     </string-array>
 
     <string name="playlist_length_title">Length</string>
@@ -74,13 +77,10 @@
         <item>40</item>
         <item>45</item>
     </string-array>
-
     <string name="length_summary">Choose the duration of your playlist</string>
     <string name="playlist_title">Playlist</string>
     <string name="change_playlist">Change Playlist</string>
     <string name="generate_playlist">Generate Playlist</string>
-
-
 
 </resources>
 

@@ -17,11 +17,8 @@ import com.spotify.sdk.android.authentication.LoginActivity.REQUEST_CODE
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.content.pm.PackageManager
-import android.view.View
+import android.graphics.Bitmap
 import kaaes.spotify.webapi.android.SpotifyService
 import retrofit.RequestInterceptor.RequestFacade
 import retrofit.RequestInterceptor
@@ -34,7 +31,24 @@ import retrofit.Callback
 import retrofit.RestAdapter
 import retrofit.RetrofitError
 import retrofit.client.Response
-
+import android.preference.PreferenceManager
+import android.provider.Settings
+import android.support.v4.util.LruCache
+import android.view.*
+import android.widget.TextView
+import android.widget.Toast
+import kotlinx.android.synthetic.main.playlist_item.view.*
+import org.w3c.dom.Text
+import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.LinearLayoutManager
+import android.widget.ImageView
+import com.android.volley.Request
+import com.android.volley.RequestQueue
+import com.android.volley.toolbox.*
+import com.spotify.android.appremote.api.UserApi
+import com.spotify.protocol.client.CallResult
+import org.json.JSONException
+import com.android.volley.toolbox.*
 
 class PlaylistActivity : AppCompatActivity() {
 
@@ -46,11 +60,14 @@ class PlaylistActivity : AppCompatActivity() {
     private lateinit var connectionListener: Connector.ConnectionListener
     //private var accessToken: String = "BQC0P5XP_oJFmcnEplIb13djEJnpnXYsNpVtM51lzYbdKj2nKylyDF1AqqzHhuKB9pibjmJRcqSWY14NNBmqZE59rWEhOFi5gfTDG9fZPsU1Rrb3o6Gx5VeglqWtOZ7PClUcpVTcrtZqJ8gwHzCTpp23skC6POMqSVjZihYHMwfxDRfkgLhHjWOPvMLZKshfhOnLLAw9dstGrXzNUQLOLT1mSgvbeaVhb64oOdWrJ3pL72yxxZM4Oaa-FUaLrgmMOIGscyY"
     private lateinit var accessToken: String
+    private lateinit var userApi: UserApi
     private lateinit var spotifyService: SpotifyService
-    private var sucessfullyConnected: Boolean = false
+    private var sucessfullyConnected: Boolean = false // to remote spotify
     private lateinit var currentUserPrivate: UserPrivate
+    private val playlistTracks =  mutableListOf<Track>()
+    private val sTracks =  mutableListOf<kaaes.spotify.webapi.android.models.Track>()
 
-    // Request code will be used to verify if result comes from the login activity. Can be set to any integer.
+    // Request code will be used to verify if result comes from the login activity
     private val LOGIN_REQUEST_CODE = 1337
     private val LOGOUT_REQUEST_CODE = 5
 
@@ -63,12 +80,13 @@ class PlaylistActivity : AppCompatActivity() {
 
             override fun onConnected(spotifyAppRemote: SpotifyAppRemote) {
                 mSpotifyAppRemote = spotifyAppRemote
-                Log.v(TAG, "Connected! Yay!")
+                Log.v(TAG, "Connected to Spotify!")
                 // Now you can start interacting with App Remote
                 connected()
             }
 
             override fun onFailure(throwable: Throwable) {
+                Log.v(TAG, "Could not connect to Spotify...")
                 Log.v(TAG, throwable.message, throwable)
 
                 // Something went wrong when attempting to connect! Handle errors here
@@ -119,6 +137,7 @@ class PlaylistActivity : AppCompatActivity() {
                 AuthenticationResponse.Type.ERROR -> {
                     // Handle error response
                     Log.v(TAG, "Error! Did not connect!")
+                    Toast.makeText(this, "Error connecting to Spotify", Toast.LENGTH_LONG).show()
                 }
                 // Most likely auth flow was cancelled
                 // Handle other cases
@@ -130,6 +149,12 @@ class PlaylistActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_playlist)
+
+        // Set up the recyclerview to display the generated playlist
+        //val recyclerView = playlist_list
+        playlist_list.layoutManager = LinearLayoutManager(this)
+        playlist_list.adapter = RecyclerViewAdapter(this, sTracks)
+        //playlist_list.adapter = PlaylistRecyclerViewAdapter(this, playlistTracks)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -161,7 +186,6 @@ class PlaylistActivity : AppCompatActivity() {
         }
     }
 
-    // TODO Fix, crashes on click
     // Handles the click for Change Playlist button
     // sends user to settings activity where they can change the options for the playlist
     fun handleChangePlaylist(v: View) {
@@ -185,6 +209,8 @@ class PlaylistActivity : AppCompatActivity() {
     private fun connected() {
         Log.v(TAG, "Connected to remote Spotify app!")
         sucessfullyConnected = true
+        userApi = mSpotifyAppRemote.userApi
+        subscribeToPlayerState()
         createSpotifyService()
         //playlist_activity_layout.visibility = View.VISIBLE
     }
@@ -199,8 +225,8 @@ class PlaylistActivity : AppCompatActivity() {
         spotifyService = api.service    // set the service reference
 
         getUser()
-
-        getRecommendations()
+        getWorkOutPlaylist()
+        //getRecommendations()
 
         playlist_activity_layout.visibility = View.VISIBLE
         /*
@@ -230,7 +256,7 @@ class PlaylistActivity : AppCompatActivity() {
     // Returns the current user logged in
     fun getUser() {
         spotifyService.getMe(object: Callback<UserPrivate> {
-            override fun success(user: UserPrivate , response: Response ) {
+            override fun success(user: UserPrivate , response: retrofit.client.Response) {
                 currentUserPrivate = user
                 Log.v(TAG,"Get user success " + user.display_name)
                 signed_in_user.text = user.display_name
@@ -247,25 +273,194 @@ class PlaylistActivity : AppCompatActivity() {
 
     }
 
+    // Get a work out genre playlist
+    fun getWorkOutPlaylist() {
+        val preferences = mutableMapOf<String, Any>()
+        preferences["seed_genres"] = "work-out,pop,edm"
+        //preferences["market"] = "from_token"
+        preferences["limit"] = 15
+        preferences["target_energy"] = 0.85
+        //preferences["target_valence"] = 0.9
+        preferences["min_popularity"] = 85
+        //tempo BPM
+        //valence 0.0-1.0
+
+        spotifyService.getRecommendations(preferences, object: Callback<Recommendations> {
+            override fun success(recommendations: Recommendations , response: retrofit.client.Response) {
+                Log.v(TAG,"Get recommendations success " + recommendations.seeds)
+                val tracks = recommendations.tracks
+                Log.v(TAG, "Tracks ${tracks.size}")
+
+                // clear the current playlist
+                //sTracks.clear()
+
+                for (track in tracks) {
+                    Log.v(TAG, "   SONG: ${track.name}   ARTISTS:${track.artists.size}   ALBUM: ${track.album.name}   POPULARITY: ${track.popularity}   URI:${track.uri}")
+                    val id = track.id
+                    //val url = "https://api.spotify.com/v1$id"
+                    //val spotifyTrack = mSpotifyAppRemote.imagesApi.getImage(track.album.images.first().url)
+                    sTracks.add(track)
+                    playlist_list.adapter!!.notifyDataSetChanged()
+                }
+            }
+
+            override fun failure(error: RetrofitError ) {
+                Log.v(TAG, "Get recommendations failure " + error.toString())
+            }
+        })
+    }
+    
+    fun getTrack(trackid: String) {
+        val url = "https://api.spotify.com/v1$trackid"
+        Log.v("VTest ListActivity", url)
+        var uri = ""
+        val request = JsonObjectRequest(Request.Method.GET, url, null,
+            com.android.volley.Response.Listener { response ->
+                try {
+                    Log.v(TAG, "GETTING REQUEST")
+                    //uri = response.getJSONObject()
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            }, com.android.volley.Response.ErrorListener { error ->
+                error(error.toString())
+            })
+        VolleyService.getInstance(this).add(request)
+    }
+
+    // Recycler view adapter for using a Track from Kaaes, Android Spotify Web API
+    class RecyclerViewAdapter(private val parentActivity: PlaylistActivity,
+                              private val values: MutableList<kaaes.spotify.webapi.android.models.Track>) :
+        RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
+
+        private val TAG = "VTRecyclerViewAdapter"
+        private val onClickListener: View.OnClickListener
+
+        init {
+            // when a song is clicked
+            onClickListener = View.OnClickListener { v ->
+                Log.v(TAG, "Song clicked")
+                val track = v.tag as kaaes.spotify.webapi.android.models.Track
+                val trackUri = track.uri
+                Log.v(TAG, "Track Uri: $trackUri")
+
+            }
+        }
+
+        // Set of instance variables
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: NetworkImageView = view.playlist_item_image
+            val songView: TextView = view.playlist_item_song
+            val artistView: TextView = view.playlist_item_artist
+            val songLengthView: TextView = view.playlist_item_length
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.playlist_item, parent, false)
+            return ViewHolder(view)
+        }
+
+        // assign values from the NewsArticle objects to the proper fields
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = values[position]
+            holder.imageView.setErrorImageResId(R.mipmap.ic_default_song_image)
+            holder.imageView.setDefaultImageResId(R.mipmap.ic_default_song_image)
+            holder.imageView.setImageUrl(item.album.images.first().url, VolleyService.getInstance(this.parentActivity).imageLoader)
+            holder.songView.text = item.name
+            holder.artistView.text = item.artists.first().name
+            val duration = (item.duration_ms.toDouble() / 1000).toInt()
+            val minutes = (duration / 60).toString()
+            var seconds = (duration%60).toString()
+            if (seconds.length == 1) {seconds = "0$seconds"}
+            val time = "$minutes:$seconds"
+            holder.songLengthView.text = time//duration.toString()
+            with(holder.itemView) {
+                tag = item
+                setOnClickListener(onClickListener)
+            }
+        }
+
+        override fun getItemCount() = values.size
+
+    }
+
+    // Recycler view adapter for using a Spotify Track
+    class PlaylistRecyclerViewAdapter(private val parentActivity: PlaylistActivity,
+                                      private val values: MutableList<Track>) :
+        RecyclerView.Adapter<PlaylistRecyclerViewAdapter.ViewHolder>() {
+
+        private val onClickListener: View.OnClickListener
+
+        init {
+            onClickListener = View.OnClickListener { v ->
+                Log.v("RecyclerViewAdapter", "Song clicked")
+            }
+        }
+
+        // Set of instance variables
+        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: NetworkImageView = view.playlist_item_image
+            val songView: TextView = view.playlist_item_song
+            val artistView: TextView = view.playlist_item_artist
+            val songLengthView: TextView = view.playlist_item_length
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.playlist_item, parent, false)
+            return ViewHolder(view)
+        }
+
+        // assign values from the NewsArticle objects to the proper fields
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = values[position]
+            holder.imageView.setErrorImageResId(R.mipmap.ic_default_song_image)
+            holder.imageView.setDefaultImageResId(R.mipmap.ic_default_song_image)
+            holder.imageView.setImageUrl(item.imageUri.toString(), VolleyService.getInstance(this.parentActivity).imageLoader)
+            holder.songView.text = item.name
+            holder.artistView.text = item.artist.toString()
+            holder.songLengthView.text = item.duration.toDouble().toString()
+            with(holder.itemView) {
+                tag = item
+                setOnClickListener(onClickListener)
+            }
+        }
+
+        override fun getItemCount() = values.size
+
+    }
+
     // Returns recommendations for the user based on their preferences
     fun getRecommendations(): Recommendations? {
         Log.v(TAG, "Getting recommendations for the user...")
         val userPrefernces = getPreferences(Context.MODE_PRIVATE)
-        val duration = userPrefernces.getString("playlist_length", "15")
-        val limit = duration.toInt() / 3
+        //userPrefernces = this.getSharedPreferences( "PlaylistOptions",Context.MODE_PRIVATE)
+        Log.v(TAG, "Genre pref exists: ${userPrefernces.contains("playlist_genre")}")
+        // Default preferences
         val defaultGenres = mutableSetOf<String>()
+        defaultGenres.add("work-out")
         defaultGenres.add("pop")
+        val defaultDuration = "20"
+
+        // User preferences values
         val genres = userPrefernces.getStringSet("playlist_genre", defaultGenres)
+        Log.v(TAG, "User genres: ${genres}")
+        val duration = userPrefernces.getString("playlist_length", defaultDuration)
+        Log.v(TAG, "User length: $duration")
+
+        // For the request
+        val limit = duration!!.toInt() / 3
 
         val preferences = mutableMapOf<String, Any>()
-        preferences["seed_genres"] = defaultGenres //genres
+        preferences["seed_genres"] = defaultGenres.toList().toString()
         //preferences["market"] = "from_token"
         //
-        preferences["limit"] = 30//limit
+        // preferences["limit"] = limit
 
         var recommendations: Recommendations? = null
         spotifyService.getRecommendations(preferences, object: Callback<Recommendations> {
-            override fun success(recs: Recommendations , response: Response ) {
+            override fun success(recs: Recommendations , response: retrofit.client.Response) {
                 recommendations = recs
                 Log.v(TAG,"Get recommendations success " + recs.seeds)
                 val tracks = recs.tracks
@@ -276,7 +471,7 @@ class PlaylistActivity : AppCompatActivity() {
             }
 
             override fun failure(error: RetrofitError ) {
-                Log.v(TAG, "Get user failure " + error.toString())
+                Log.v(TAG, "Get recommendations failure " + error.toString())
             }
         })
         return  recommendations
@@ -286,7 +481,7 @@ class PlaylistActivity : AppCompatActivity() {
     fun getAlbum(albumId: String): Album {
         lateinit var album: Album
         spotifyService.getAlbum(albumId, object: Callback<Album> {
-            override fun success(result: Album , response: Response ) {
+            override fun success(result: Album , response: retrofit.client.Response) {
                 album = result
                 Log.v(TAG,"Album success " + album.name)
             }
@@ -296,6 +491,22 @@ class PlaylistActivity : AppCompatActivity() {
             }
         })
         return album
+    }
+
+    // Returns the track of the given id SpotifyService
+    fun getTrackKaaes(trackId: String): kaaes.spotify.webapi.android.models.Track {
+        lateinit var track: kaaes.spotify.webapi.android.models.Track
+        spotifyService.getTrack(trackId, object: Callback<kaaes.spotify.webapi.android.models.Track> {
+            override fun success(result: kaaes.spotify.webapi.android.models.Track, response: retrofit.client.Response) {
+                track = result
+                Log.v(TAG,"Album success " + track.name)
+            }
+
+            override fun failure(error: RetrofitError ) {
+                Log.v(TAG, "Album failure " + error.toString())
+            }
+        })
+        return track
     }
 
     // TODO finish
@@ -370,7 +581,7 @@ class PlaylistActivity : AppCompatActivity() {
 
                 override fun onConnected(spotifyAppRemote: SpotifyAppRemote) {
                     mSpotifyAppRemote = spotifyAppRemote
-                    Log.d(TAG, "Connected! Yay!")
+                    Log.v(TAG, "Connected! Yay!")
 
                     // Now you can start interacting with App Remote
                     connected()
@@ -378,11 +589,53 @@ class PlaylistActivity : AppCompatActivity() {
                 }
 
                 override fun onFailure(throwable: Throwable) {
-                    Log.e(TAG, throwable.message, throwable)
+                    Log.v(TAG, throwable.message, throwable)
 
                     // Something went wrong when attempting to connect! Handle errors here
                 }
             })
+    }
+
+    //A class to manage the Volley requestQueue as a singleton
+    private class VolleyService private constructor(ctx: Context) { //private constructor; cannot instantiate directly
+        companion object {
+            private var instance: VolleyService? = null //the single instance of this singleton
+
+            //call this "factory" method to access the Singleton
+            fun getInstance(ctx: Context): VolleyService {
+                //only create the singleton if it doesn't exist yet
+                if (instance == null) {
+                    instance = VolleyService(ctx)
+                }
+
+                return instance as VolleyService //force casting
+            }
+        }
+
+        //from Kotlin docs
+        val requestQueue: RequestQueue by lazy {
+            Volley.newRequestQueue(ctx.applicationContext) //return the context-based requestQueue
+        }
+
+        //from Kotlin docs
+        val imageLoader: ImageLoader by lazy {
+            ImageLoader(requestQueue,
+                object : ImageLoader.ImageCache {
+                    private val cache = LruCache<String, Bitmap>(20)
+                    override fun getBitmap(url: String): Bitmap? {
+                        return cache.get(url)
+                    }
+                    override fun putBitmap(url: String, bitmap: Bitmap) {
+                        cache.put(url, bitmap)
+                    }
+                })
+        }
+
+        //convenience wrapper method
+        fun <T> add(req: Request<T>) {
+            requestQueue.add(req)
+        }
+
     }
 
     private val spotifyGenres = arrayOf(
