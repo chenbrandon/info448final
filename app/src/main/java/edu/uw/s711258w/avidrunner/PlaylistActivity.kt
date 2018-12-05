@@ -7,49 +7,33 @@ import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 
-import com.spotify.protocol.client.Subscription
-import com.spotify.protocol.types.PlayerState
-import com.spotify.protocol.types.Track
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
-import com.spotify.sdk.android.authentication.LoginActivity.REQUEST_CODE
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import kaaes.spotify.webapi.android.SpotifyService
-import retrofit.RequestInterceptor.RequestFacade
-import retrofit.RequestInterceptor
 import kaaes.spotify.webapi.android.SpotifyApi
 import kotlinx.android.synthetic.main.activity_playlist.*
 import retrofit.Callback
-import retrofit.RestAdapter
 import retrofit.RetrofitError
-import retrofit.client.Response
-import android.preference.PreferenceManager
-import android.provider.Settings
 import android.support.v4.util.LruCache
 import android.view.*
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.playlist_item.view.*
-import org.w3c.dom.Text
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.LinearLayoutManager
-import android.widget.ImageView
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.*
 import com.spotify.android.appremote.api.UserApi
-import com.spotify.protocol.client.CallResult
 import org.json.JSONException
-import com.android.volley.toolbox.*
-import com.spotify.protocol.types.Artist
 import kaaes.spotify.webapi.android.models.*
 import java.util.*
-import kotlin.math.min
 
 class PlaylistActivity : AppCompatActivity() {
 
@@ -202,10 +186,10 @@ class PlaylistActivity : AppCompatActivity() {
         Log.v(TAG, "Add Playlist button clicked, adding playlist to Spotify account...")
 
         //if (!playlistCreated) {
-            createPlaylist("Avid Runner Playlist")
+            //createPlaylist("Avid Runner")
             //playlistCreated = true
         //}
-        //if (playlistGenerated != null) {
+        //if (playlistGenerated.) {
             val parameters = mutableMapOf<String, Any>()
             // array of track uris
             val body = mutableMapOf<String, Any>()
@@ -215,16 +199,17 @@ class PlaylistActivity : AppCompatActivity() {
                 uriArray.add(track.uri)
             }
             parameters["uris"] = uriArray.toList()
+            body["uris"] = uriArray
 
             spotifyService.addTracksToPlaylist(
-                currentUserPrivate.display_name,
+                currentUserPrivate.id,
                 playlistGenerated.id,
                 parameters,
                 body,
                 object : Callback<Pager<PlaylistTrack>> {
                     override fun success(playlistTrack: Pager<PlaylistTrack>, response: retrofit.client.Response) {
                         Log.v(TAG, "Add to playlist success ${playlistTrack.total}")
-
+                        //playlistTrack.items
                     }
 
                     override fun failure(error: RetrofitError) {
@@ -234,11 +219,13 @@ class PlaylistActivity : AppCompatActivity() {
         //}
     }
 
-    // creates a playlist
+    // creates a playlist in Spotify account with the given name
     fun createPlaylist(name: String) {
         val parameters = mutableMapOf<String, Any>()
         parameters["name"] = name
-        spotifyService.createPlaylist(currentUserPrivate.display_name, parameters, object: Callback<Playlist> {
+        parameters["description"] = "Running playlist"
+        //val playlistReturned = spotifyService.createPlaylist(name, parameters)
+        spotifyService.createPlaylist(currentUserPrivate.id, parameters, object: Callback<Playlist> {
             override fun success(playlist: Playlist , response: retrofit.client.Response) {
                 Log.v(TAG,"Create playlist success ${playlist.name}")
                 Log.v(TAG,"Create playlist success ${playlist.id}")
@@ -273,8 +260,6 @@ class PlaylistActivity : AppCompatActivity() {
 
         getUser()
         getWorkOutPlaylist()
-
-        playlist_activity_layout.visibility = View.VISIBLE
     }
 
     // Returns the current user logged in
