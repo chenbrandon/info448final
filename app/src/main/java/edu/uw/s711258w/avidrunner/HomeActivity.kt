@@ -68,9 +68,8 @@ class HomeActivity: AppCompatActivity() {
 
         // Set Adapter for listview
         (listView as AdapterView<Adapter>).adapter = adapter
+            getRunData()
 
-        // Load run data
-        getRunData()
     }
 
     // Gets the run data, render in list
@@ -89,13 +88,6 @@ class HomeActivity: AppCompatActivity() {
                 Log.v(TAG, "There was an exception converting the allRuns to RunHistory object")
             }
         }
-
-        // using dummy data for now
-//        val list = getDummyData()
-//        for (item in list) {
-//            runDataList.add(item)
-//            adapter.notifyDataSetChanged()
-//        }
     }
 
     // generates a list of dummy run data

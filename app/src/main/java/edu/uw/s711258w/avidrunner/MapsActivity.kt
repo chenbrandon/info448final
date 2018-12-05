@@ -100,7 +100,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         end = true
         //fusedLocationClient.removeLocationUpdates(locationCallback)
 
-        val formatter = SimpleDateFormat("dd/MM/yyyy")
+        val formatter = SimpleDateFormat("MM/dd/yyyy")
         val date = Date()
 
         val geoJson = convertToGeoJson(linesList)
